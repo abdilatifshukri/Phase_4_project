@@ -14,37 +14,40 @@ class UsersController < ApplicationController
     end
 
     def create
-            @User = User.new (review_params)
-            if @user.save 
-                render json: @user
-            else 
-                render json: { errors: @user.errors.full_messages }, status: :unprocessable_entity
-            end
+        @user = User.find_by(id: params[:id])
+        if @user.nil?
+          @user = User.new(user_params)
+          if @user.save
+            render json: @user, status: :created
+          else
+            render json: @user.errors, status: :unprocessable_entity
+          end
+        else
+          render json: { message: "User already exists" }, status: :conflict
+        end
     end
 
     def update
         @user = User.find_by(id: params[:id])
-        if @user
-            if @user = User.update(user_params)
-                render json: @user
-            else 
-                render json: { errors: @user.errors.full_messages }, status: :unprocessable_entity
-            end
+        if @user.update(user_params)
+         render json: @user
         else
-            render json: { error: "User not found" }, status: :not_found
+          render json: @user.errors, status: :unprocessable_entity
         end
     end
 
     def destroy
-        find_user.destroy
-        head :no_content
+        user = User.find_by(id: params[:id])
+        if user.nil?
+            render json: { error: "User not found" }, status: :not_found
+        else
+          user.destroy
+          render json: @users
+        end
       end
+    
 
     private
-
-    def find_user
-        User.find(params[:id])
-    end
 
     def user_params 
         params.permit(:name, :email, :password)

@@ -14,37 +14,39 @@ class ReviewsController < ApplicationController
     end
 
     def create
-            @review = Review.new (review_params)
-            if @review.save 
-                render json: @review
-            else 
-                render json: { errors: @review.errors.full_messages }, status: :unprocessable_entity
-            end
+        @user = Review.find_by(id: params[:id])
+        if @review.nil?
+          @review = Review.new(review_params)
+          if @review.save
+            render json: @review, status: :created
+          else
+            render json: @review.errors, status: :unprocessable_entity
+          end
+        else
+          render json: { message: "Review already exists" }, status: :conflict
+        end
     end
 
     def update
         @review = Review.find_by(id: params[:id])
-        if @review
-            if @review = Review.update(review_params)
-                render json: @review
-            else 
-                render json: { errors: @review.errors.full_messages }, status: :unprocessable_entity
-            end
+        if @review.update(review_params)
+         render json: @review
         else
-            render json: { error: "Review not found" }, status: :not_found
+          render :edit
         end
     end
 
     def destroy
-        find_restaurant.destroy
-        head :no_content
-      end
+        review = Review.find_by(id: params[:id])
+        if review.nil?
+            render json: { error: "Review not found" }, status: :not_found
+        else
+          review.destroy
+          render json: @reviews
+        end
+    end
 
     private
-
-    def find_restaurant
-        Restaurant.find(params[:id])
-    end
 
     def review_params 
         params.permit(:description)
